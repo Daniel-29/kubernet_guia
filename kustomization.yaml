@@ -1,0 +1,12 @@
+secretGenerator:
+  - name: mysql-pass-one
+    literals:
+      - password=TWluaVN0b2dhbg==
+  - name: mysql-pass-two
+    literals:
+      - password=TWluaVZpbGxh
+resources:
+  - shop-one-db-deployment.yaml
+  - shop-one-deployment.yaml
+  - shop-two-db-deployment.yaml
+  - shop-two-deployment.yaml

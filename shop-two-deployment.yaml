@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: shop-two
+  labels:
+    app: shop-two
+spec:
+  ports:
+    - port: 80
+  selector:
+    app: shop-two
+    tier: frontend-shop-two
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: wp-pv-claim-shop-two
+  labels:
+    app: shop-two
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shop-two
+  labels:
+    app: shop-two
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 50%
+  selector:
+    matchLabels:
+      app: shop-two
+      tier: frontend-shop-two
+  template:
+    metadata:
+      labels:
+        app: shop-two
+        tier: frontend-shop-two
+    spec:
+      containers:
+        - image: wordpress:4.8-apache
+          name: shop-two
+          env:
+            - name: WORDPRESS_DB_HOST
+              value: shop-two-db
+            - name: WORDPRESS_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-pass-two
+                  key: password
+          ports:
+            - containerPort: 80
+              name: shop-two
+          volumeMounts:
+            - name: wordpress-persistent-storage-shop-two
+              mountPath: /var/www/html
+      volumes:
+        - name: wordpress-persistent-storage-shop-two
+          persistentVolumeClaim:
+            claimName: wp-pv-claim-shop-two

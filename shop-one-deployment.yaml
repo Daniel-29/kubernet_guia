@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: shop-one
+  labels:
+    app: shop-one
+spec:
+  ports:
+    - port: 80
+  selector:
+    app: shop-one
+    tier: frontend-shop-one
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: wp-pv-claim-shop-one
+  labels:
+    app: shop-one
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shop-one
+  labels:
+    app: shop-one
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 50%
+  selector:
+    matchLabels:
+      app: shop-one
+      tier: frontend-shop-one
+  template:
+    metadata:
+      labels:
+        app: shop-one
+        tier: frontend-shop-one
+    spec:
+      containers:
+        - image: wordpress:4.8-apache
+          name: shop-one
+          env:
+            - name: WORDPRESS_DB_HOST
+              value: shop-one-db
+            - name: WORDPRESS_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-pass-one
+                  key: password
+          ports:
+            - containerPort: 80
+              name: shop-one
+          volumeMounts:
+            - name: wordpress-persistent-storage-shop-one
+              mountPath: /var/www/html
+      volumes:
+        - name: wordpress-persistent-storage-shop-one
+          persistentVolumeClaim:
+            claimName: wp-pv-claim-shop-one
